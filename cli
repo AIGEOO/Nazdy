@@ -1,0 +1,21 @@
+<?php
+
+require_once __DIR__ . '/vendor/autoload.php';
+
+use function Termwind\{render};
+
+// multi-line html...
+render(<<<'HTML'
+    <div>
+        <div class="px-1 bg-blue-600">Nazdy</div>
+        <em class="ml-1">
+            E-commerce application build on macro MVC framework...
+        </em>
+        <br>
+
+        <div class="text-white">
+            <em class=" text-yellow-300">Options: </em>
+            <p>migrate</p>
+        </div>
+    </div>
+HTML);
