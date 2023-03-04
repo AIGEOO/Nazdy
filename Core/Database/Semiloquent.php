@@ -4,21 +4,19 @@ declare(strict_types=1);
 
 namespace Core\Database;
 
-use Core\Application;
+use Core\Exceptions\RecordNotFoundException;
 use PDO;
-
-/**
- * TODO: Make security validation for each function
- * TODO: Refactor DB connection
- */
 
 class Semiloquent
 {
     public PDO $db;
+    protected ?string $query;
+    protected ?array $bindings = [];
 
     public function __construct(public string $table)
     {
-        $this->db = Application::db()->pdo;    
+        $this->db = \Core\Application::db()->pdo;
+        $this->query = "SELECT * FROM {$this->table}";    
     }
 
     public function query(string $sql, array $bindings): array
@@ -30,117 +28,115 @@ class Semiloquent
 
     public function all(): array
     {
-        $stmt = $this->db->prepare("SELECT * FROM :table");
-        $stmt->execute([':table' => $this->table]);
+        $stmt = $this->db->prepare("SELECT * FROM {$this->table}");
+        $stmt->execute();
         return $stmt->fetch();
     }
 
-    public function find(string $name)
+    public function find(int $id): array
     {
-        $stmt = $this->db->prepare("SELECT * FROM :table WHERE name = :name");
-        $stmt->execute([':table' => $this->table, ':name' => $name]);
-        return $stmt->fetch();
+        return $this->where('id', '=', $id)->get();
     }
 
-    public function count(): int
+    public function where(string $column, string $condition, string|int $value): self
     {
-        $stmt = $this->db->prepare("SELECT COUNT(*) FROM :table");
-        $stmt->execute([':table' => $this->table]);
-        return (int) $stmt->fetch();
+        $this->query = $this->query . " WHERE {$column} {$condition} ?";
+        $this->bindings = [$value];
+        return $this;
     }
 
-    public function avg(string $column): float
+    public function get(): array
     {
-        $stmt = $this->db->prepare("SELECT AVG(:column) FROM :table");
-        $stmt->execute([':column' => $column, ':table' => $this->table]);
-        return (float) $stmt->fetch();
+        $stmt = $this->db->prepare($this->query);
+        $stmt->execute($this->bindings);
+
+        $this->query = 'SELECT * FROM {$this->table}';
+        $this->bindings = [];
+        return $stmt->fetchAll();
     }
 
-    public function min(string $column)
+    public function count(string $column = '*'): self
     {
-        $stmt = $this->db->prepare("SELECT MIN(:column) FROM :table");
-        $stmt->execute([':column' => $column, ':table' => $this->table]);
-        return $stmt->fetch();
+        $this->query = str_replace('*', "COUNT(" . $column . ") AS value", $this->query);
+        return $this;
     }
 
-    public function max(string $column)
+    protected function mathQueries(string $type, string $column): self
     {
-        $stmt = $this->db->prepare("SELECT MAX(:column) FROM :table");
-        $stmt->execute([':column' => $column, ':table' => $this->table]);
-        return $stmt->fetch();
+        $this->query = "SELECT $type($column) AS value FROM {$this->table}";
+        return $this;
     }
 
-    public function sum(string $column): float
+    public function avg(string $column): self
     {
-        $stmt = $this->db->prepare("SELECT SUM(:column) FROM :table");
-        $stmt->execute([':column' => $column, ':table' => $this->table]);
-        return (float) $stmt->fetch();
+        return $this->mathQueries("AVG", $column);
+    }
+
+    public function min(string $column): self
+    {
+        return $this->mathQueries("MIN", $column);
+    }
+
+    public function max(string $column): self
+    {
+        return $this->mathQueries("MAX", $column);
+    }
+
+    public function sum(string $column): self
+    {
+        return $this->mathQueries("SUM", $column);
     }
 
     public function create(array $data): bool
     {
-        $keys = implode(',', array_keys($data));
-        $placeholders = ':' . implode(', :', array_keys($data));
-        $stmt = $this->db->prepare("INSERT INTO :table ({$keys}) VALUES ({$placeholders})");
-        return $stmt->execute($data);
+        $columns = implode(',', array_keys($data));
+        $placeholders = implode(',', array_fill(0, count($data), '?'));
+
+        $this->query = "INSERT INTO {$this->table} ({$columns}) VALUES ({$placeholders})";
+        $this->bindings = array_values($data);
+
+        return is_array($this->get());
     }
 
-    public function update(array $data, array $condition): bool
+    # use where() after update()
+    public function update(array $data): self
     {
-        $set = '';
-        $conditionString = '';
-        $conditionData = [];
+        $values = implode(', ', array_map(function ($key, $value) {
+            return "$key = '$value'";
+        }, array_keys($data), $data));
 
-        foreach ($data as $key => $value) {
-            $set .= "{$key} = :{$key}, ";
-        }
-        $set = rtrim($set, ', ');
-
-        foreach ($condition as $key => $value) {
-            $conditionString .= "{$key} = :{$key} AND ";
-            $conditionData[$key] = $value;
-        }
-        $conditionString = rtrim($conditionString, ' AND ');
-
-        $data = array_merge($data, $conditionData);
-        $stmt = $this->db->prepare("UPDATE :table SET {$set} WHERE {$conditionString}");
-
-        return $stmt->execute($data);
+        $this->query = "UPDATE {$this->table} SET " . $values . " ";
+        return $this;
     }
 
-    public function updateOrCreate(array $data, array $condition): bool
+    # use where() after updateOrCreate()
+    public function updateOrCreate(array $data, string $column, string $condition, string|int $value): bool
     {
-        $update = $this->update($data, $condition);
-        if (!$update) {
-            return $this->create($data);
+        $exsistingCheck = $this->where($column, $condition, $value)->get();
+
+        if ($exsistingCheck) {
+            return is_array($this->update($data)->where($column, $condition, $value)->get());
         }
-        return $update;
+
+        return $this->create($data);
     }
     
     public function delete(int $id): bool
     {
-        $stmt = $this->db->prepare("DELETE FROM :table WHERE id = :id");
-        return $stmt->execute([':id' => $id]);
-    }
-    
-    public function where(array $condition): array
-    {
-        $where = '';
-        foreach ($condition as $key => $value) {
-            $where .= "{$key} = :{$key} AND ";
+        if (! empty($this->find($id))) {
+            $this->query = "DELETE FROM {$this->table}";
+            return is_array($this->where('id', '=', $id)->get());
         }
-        $where = rtrim($where, ' AND ');
-        $stmt = $this->db->prepare("SELECT * FROM :table WHERE {$where}");
-        $stmt->execute($condition);
-        return $stmt->fetch();
+        
+        throw new RecordNotFoundException("Record with id $id not found in table $this->table");
     }
     
-    public function findOrFail(string $name): array
+    public function findOrFail(int $id): array
     {
-        $record = $this->find($name);
-        if (!$record) {
-            throw new \Exception("Record with name {$name} not found in table :table");
+        $record = $this->find($id);
+        if (empty($record)) {
+            throw new RecordNotFoundException("Record with id $id not found in table $this->table");
         }
         return $record;
     }
-}    
+}
