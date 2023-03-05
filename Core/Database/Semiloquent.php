@@ -50,7 +50,7 @@ class Semiloquent
         $stmt = $this->db->prepare($this->query);
         $stmt->execute($this->bindings);
 
-        $this->query = 'SELECT * FROM {$this->table}';
+        $this->query = "SELECT * FROM {$this->table}";
         $this->bindings = [];
         return $stmt->fetchAll();
     }
