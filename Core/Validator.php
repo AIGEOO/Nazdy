@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Core;
 
+use Core\Database\Semiloquent;
+
 class Validator
 {
     const ERROR_DEFAULT = 'Invalid';
@@ -28,6 +30,7 @@ class Validator
             - 2 uppercase letters
             - 1 special case letter
             - 2 digits
+            - 3 lowercase letters
             - length in range 8 - 16
         ',
         'unique' => 'record is already exists',
@@ -158,14 +161,7 @@ class Validator
 
     protected function validateCreditCard(string $field, string $value, array $params): bool
     {
-        /**
-         * I there has been an array of valid cards supplied, or the name of the users card
-         * or the name and an array of valid cards
-         */
         if (!empty($params)) {
-            /**
-             * array of valid cards
-             */
             if (is_array($params[0])) {
                 $cards = $params[0];
             } elseif (is_string($params[0])) {
@@ -221,26 +217,20 @@ class Validator
                 );
 
                 if (isset($cardType)) {
-                    // if we don't have any valid cards specified and the card we've been given isn't in our regex array
                     if (!isset($cards) && !in_array($cardType, array_keys($cardRegex))) {
                         return false;
                     }
 
-                    // we only need to test against one card type
                     return (preg_match($cardRegex[$cardType], $value) === 1);
 
                 } elseif (isset($cards)) {
-                    // if we have cards, check our users card against only the ones we have
                     foreach ($cards as $card) {
                         if (in_array($card, array_keys($cardRegex)) && preg_match($cardRegex[$card], $value) === 1) {
-                            // if the card is valid, we want to stop looping
                             return true;
                         }
                     }
                 } else {
-                    // loop through every card
                     foreach ($cardRegex as $regex) {
-                        // until we find a valid one
                         if (preg_match($regex, $value) === 1) {
                             return true;
                         }
@@ -249,7 +239,6 @@ class Validator
             }
         }
 
-        // if we've got this far, the card has passed no validation so it's invalid!
         return false;
     }
 
@@ -265,11 +254,13 @@ class Validator
     protected function validatePassword(string $field, string $value): bool 
     {
         $regex = '/^(?=.*[A-Z].*[A-Z])(?=.*[!@#$&*])(?=.*[0-9].*[0-9])(?=.*[a-z].*[a-z].*[a-z]).{8,16}$/';
-        return preg_match($regex, $value);
+        return preg_match($regex, $value) ? true : false;
     }
 
-    // TODO: implemente this function
-    protected function validateUnique(string $field, string $value, array $params): bool {  return true; }
+    protected function validateUnique(string $field, string $value, array $params) 
+    {
+        return empty((new Semiloquent($params[0]))->where($field, '=', $value)->get());
+    }
 
     public function data(): array
     {
