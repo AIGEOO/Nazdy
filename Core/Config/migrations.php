@@ -3,22 +3,31 @@
 declare(strict_types = 1);
 
 return [
-    'table_storage' => [
-        'table_name' => 'doctrine_migration_versions',
-        'version_column_name' => 'version',
-        'version_column_length' => 1024,
-        'executed_at_column_name' => 'executed_at',
-        'execution_time_column_name' => 'execution_time',
+    'migration_dirs' => [
+        'migrations' => __DIR__ . '/../../migrations',
     ],
-
-    'migrations_paths' => [
-        'Migrations' => __DIR__ . '/../migrations',
+    'environments' => [
+        'local' => [
+            'adapter' => 'mysql',
+            'host' => 'localhost',
+            'port' => 3306, 
+            'username' => 'root',
+            'password' => '',
+            'db_name' => 'nazdy',
+            'charset' => 'utf8mb4',
+            'collation' => 'utf8mb4_general_ci', 
+        ],
+        'production' => [
+            'adapter' => 'mysql',
+            'host' => 'production_host',
+            'port' => 3306, 
+            'username' => 'root',
+            'password' => '',
+            'db_name' => 'nazdy',
+            'charset' => 'utf8mb4',
+            'collation' => 'utf8mb4_general_ci', 
+        ],
     ],
-
-    'all_or_nothing' => true,
-    'transactional' => true,
-    'check_database_platform' => true,
-    'organize_migrations' => 'none',
-    'connection' => null,
-    'em' => null,
+    'default_environment' => 'local',
+    'log_table_name' => 'migrations_log',
 ];
