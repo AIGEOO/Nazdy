@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 use Phoenix\Migration\AbstractMigration;
 
-final class CreateCustomersTable extends AbstractMigration
+final class CreateUsersTable extends AbstractMigration
 {
     protected function up(): void
     {
-        $this->execute(' CREATE TABLE `customers` (
+        $this->execute(' CREATE TABLE `users` (
                 `id` int(11) PRIMARY KEY NOT NULL AUTO_INCREMENT,
                 `name` varchar(255) NOT NULL,
                 `email` varchar(255) NOT NULL,
@@ -24,6 +24,6 @@ final class CreateCustomersTable extends AbstractMigration
 
     protected function down(): void
     {
-        $this->table('customers')->drop();
+        $this->table('users')->drop();
     }
 }
