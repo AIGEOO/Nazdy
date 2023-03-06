@@ -10,7 +10,7 @@ final class CreateOrdersTable extends AbstractMigration
     {
         $this->execute('CREATE TABLE `orders` (
                 `id` int(11) PRIMARY KEY NOT NULL AUTO_INCREMENT,
-                `customer_id` int(11) NOT NULL,
+                `user_id` int(11) NOT NULL,
                 `product_id` int(11) NOT NULL,
                 `quantity` int(11) NOT NULL,
                 `total` float NOT NULL,
@@ -22,7 +22,7 @@ final class CreateOrdersTable extends AbstractMigration
                 `shipping_cost` float NOT NULL,
                 `created_at` datetime NOT NULL,
                 `updated_at` datetime NOT NULL,
-                CONSTRAINT `fk_customer_id__` FOREIGN KEY (`customer_id`) REFERENCES `customers` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+                CONSTRAINT `fk_user_id__` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
                 CONSTRAINT `fk_product_id_` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8;            
         ');

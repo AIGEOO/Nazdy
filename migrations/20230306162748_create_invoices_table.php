@@ -10,12 +10,12 @@ final class CreateInvoicesTable extends AbstractMigration
     {
         $this->execute('CREATE TABLE `invoices` (
                 `id` int(11) PRIMARY KEY NOT NULL AUTO_INCREMENT,
-                `customer_id` int(11) NOT NULL,
+                `user_id` int(11) NOT NULL,
                 `products_info` text NOT NULL COMMENT "names & prices & quantities in json",
                 `total` float NOT NULL,
                 `created_at` datetime NOT NULL,
                 `updated_at` datetime NOT NULL,
-                CONSTRAINT `fk_customer_id` FOREIGN KEY (`customer_id`) REFERENCES `customers` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+                CONSTRAINT `fk_user_id` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
         ');
     }
