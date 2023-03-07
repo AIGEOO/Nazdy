@@ -16,21 +16,18 @@ class Semiloquent
     public function __construct(public string $table)
     {
         $this->db = \Core\Application::db()->pdo;
-        $this->query = "SELECT * FROM {$this->table}";    
     }
 
     public function query(string $sql, array $bindings): array
     {
         $stmt = $this->db->prepare($sql);
         $stmt->execute($bindings);
-        return $stmt->fetch();
+        return $stmt->fetchAll();
     }
 
     public function all(): array
     {
-        $stmt = $this->db->prepare("SELECT * FROM {$this->table}");
-        $stmt->execute();
-        return $stmt->fetch();
+        return $this->select()->get();
     }
 
     public function find(int $id): array
@@ -38,9 +35,21 @@ class Semiloquent
         return $this->where('id', '=', $id)->get();
     }
 
+    public function select(string $field = "*")
+    {
+        $this->query = "SELECT " . $field . " FROM {$this->table}";
+        return $this;
+    }
+
+    public function and()
+    {
+        $this->query .= " AND ";
+        return $this;
+    }
+
     public function where(string $column, string $condition, string|int $value): self
     {
-        $this->query = $this->query . " WHERE {$column} {$condition} ?";
+        $this->query .= " WHERE {$column} {$condition} ?";
         $this->bindings = [$value];
         return $this;
     }
@@ -50,7 +59,7 @@ class Semiloquent
         $stmt = $this->db->prepare($this->query);
         $stmt->execute($this->bindings);
 
-        $this->query = "SELECT * FROM {$this->table}";
+        $this->query = null;
         $this->bindings = [];
         return $stmt->fetchAll();
     }
