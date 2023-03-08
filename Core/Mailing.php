@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Core;
 
+use Core\Logger;
 use Symfony\Component\Mailer\Envelope;
 use Symfony\Component\Mime\RawMessage;
 use Symfony\Component\Mailer\Transport;
@@ -21,6 +22,8 @@ class Mailing implements MailerInterface
 
     public function send(RawMessage $message, Envelope $envelope = null): void
     {
+        Logger::info("Mailer: Email Was sent");
+
         $this->transport->send($message, $envelope);
     }
 }

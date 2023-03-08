@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Core\Database;
 
 use Core\Exceptions\RecordNotFoundException;
+use Core\Logger;
 use PDO;
 
 class Semiloquent
@@ -56,6 +57,8 @@ class Semiloquent
 
     public function get(): array
     {
+        Logger::notice("Semiloquent: the query (" . $this->query . ') Was executed');
+        
         $stmt = $this->db->prepare($this->query);
         $stmt->execute($this->bindings);
 

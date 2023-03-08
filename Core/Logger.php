@@ -56,7 +56,7 @@ class Logger
             'context' => $context
         );
 
-        $logFile = STORAGE_PATH . '/' . 'nazdy.log';
+        $logFile = __DIR__ . '/../../storage/nazdy.log';
 
         $date = date('Y-m-d H:i:s');
         $message = "[$date] [$level] $message\n";

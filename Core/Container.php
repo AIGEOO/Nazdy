@@ -4,9 +4,10 @@ declare(strict_types = 1);
 
 namespace Core;
 
-use Core\Exceptions\Container\ContainerException;
-use Core\Exceptions\Container\NotFoundException;
+use Core\Logger;
 use Psr\Container\ContainerInterface;
+use Core\Exceptions\Container\NotFoundException;
+use Core\Exceptions\Container\ContainerException;
 
 class Container implements ContainerInterface
 {
@@ -42,10 +43,13 @@ class Container implements ContainerInterface
         try {
             $reflectionClass = new \ReflectionClass($id);
         } catch(\ReflectionException $e) {
+            Logger::error("Container: " . $e->getMessage());
             throw new NotFoundException($e->getMessage(), $e->getCode(), $e);
         }
 
         if (! $reflectionClass->isInstantiable()) {
+            Logger::error("Container: the class is not instantiable");
+
             throw new ContainerException('Class "' . $id . '" is not instantiable');
         }
 
@@ -67,12 +71,16 @@ class Container implements ContainerInterface
                 $type = $param->getType();
 
                 if (! $type) {
+                    Logger::error("Container: Failed to resolve class because some params are missing a type hint");
+
                     throw new ContainerException(
                         'Failed to resolve class "' . $id . '" because param "' . $name . '" is missing a type hint'
                     );
                 }
 
                 if ($type instanceof \ReflectionUnionType) {
+                    Logger::error("Container: Failed to resolve class because some params are missing a type hint");
+
                     throw new ContainerException(
                         'Failed to resolve class "' . $id . '" because of union type for param "' . $name . '"'
                     );
@@ -81,6 +89,8 @@ class Container implements ContainerInterface
                 if ($type instanceof \ReflectionNamedType && ! $type->isBuiltin()) {
                     return $this->get($type->getName());
                 }
+
+                Logger::error("Container: Failed to resolve class because some params are missing a type hint");
 
                 throw new ContainerException(
                     'Failed to resolve class "' . $id . '" because invalid param "' . $name . '"'

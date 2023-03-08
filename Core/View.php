@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Core;
 
+use Core\Config;
+use Core\Logger;
 use Core\Application;
 use Twig\Environment as Twig;
 use Core\Exceptions\ViewNotFoundException;
@@ -48,6 +50,8 @@ class View
             return $this->twig->render($view, $parameters);
 
         } catch (\Throwable $th) {
+            Logger::error("View: " . $th->getMessage());
+            
             throw new ViewNotFoundException();
         }
     }

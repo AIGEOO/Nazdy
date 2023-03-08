@@ -5,10 +5,11 @@ declare(strict_types=1);
 namespace Core;
 
 use Core\Config;
+use Core\Logger;
 use Core\Request;
 use Core\Response;
-use Core\Application;
 use Core\Container;
+use Core\Application;
 use Core\Exceptions\RouteNotFoundException;
 use Core\Exceptions\MiddlewareNotFoundException;
 
@@ -30,6 +31,8 @@ class Router
 
         foreach ($middlewares as $middleware) {
             if (! $config[$middleware]) {
+                Logger::error("Middleware: Middleware Not Found");
+
                 throw new MiddlewareNotFoundException();
             }
 
@@ -86,6 +89,8 @@ class Router
         $routeInfo = static::$routes[$method][$route] ?? null;
         
         if (! $routeInfo) {
+            Logger::error("Router: Route Not Found");
+
             throw new RouteNotFoundException();
         }
 
@@ -116,6 +121,8 @@ class Router
                 return call_user_func([$class, $method]);
             }
         }
+
+        Logger::error("Router: Route Not Found");
 
         throw new RouteNotFoundException();
     }
