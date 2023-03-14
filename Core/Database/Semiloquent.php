@@ -99,6 +99,12 @@ class Semiloquent
         return $this->mathQueries("SUM", $column);
     }
 
+    public function truncate()
+    {
+        $this->query = "TRUNCATE TABLE " . $this->table;
+        return is_array($this->get());
+    }
+
     public function create(array $data): bool
     {
         $columns = implode(',', array_keys($data));
