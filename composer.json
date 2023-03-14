@@ -20,6 +20,7 @@
         "symfony/mailer": "^6.2",
         "spatie/ignition": "^1.4",
         "nunomaduro/termwind": "^1.15",
-        "lulco/phoenix": "^2.3"
+        "lulco/phoenix": "^2.3",
+        "fakerphp/faker": "^1.21"
     }
 }
